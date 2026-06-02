@@ -44,6 +44,13 @@ typedef struct {
     char horario[10];
 } ItemChat;
 
+typedef struct NoMensagem {
+    ItemChat mensagem;
+    struct NoMensagem *prox;
+} NoMensagem;
+
+NoMensagem *inicioChat = NULL;
+
 Usuario listaUsuarios[MAX_ITENS];
 int numUsuarios = 0;
 
@@ -55,9 +62,6 @@ int numConteudos = 0;
 
 SessaoDeExibicao listaSessoes[MAX_ITENS];
 int numSessoes = 0;
-
-ItemChat listaMensagens[MAX_ITENS];
-int numMensagens = 0;
 
 
 void exibirMenuPrincipal();
@@ -78,12 +82,15 @@ void listarConteudos();
 void gerenciarSessoes();
 void criarSessao();
 void listarSessoes();
+void iniciarSessao();
 
 void gerenciarChat();
 void enviarMensagem();
 void listarMensagens();
 
 void participarSessao();
+
+void carregarDadosIniciais();
 
 void limparBuffer();
 void pressionarEnterParaContinuar();
@@ -96,6 +103,7 @@ void removerQuebraLinha(char *texto) {
 int main(){
     int opcao;
     printf("Bem-vindo ao Watch Party Planner!\n");
+    carregarDadosIniciais();
     do {
         exibirMenuPrincipal();
         if (scanf("%d", &opcao) != 1) {
@@ -291,9 +299,9 @@ void gerenciarSessoes() {
     int opcao;
 
     do {
-        printf("\n=== SESSOES ===\n");
         printf("1 - Criar Sessao\n");
         printf("2 - Listar Sessoes\n");
+        printf("3 - Iniciar Sessao\n");
         printf("0 - Voltar\n");
         printf("Opcao: ");
 
@@ -301,14 +309,17 @@ void gerenciarSessoes() {
         limparBuffer();
 
         switch(opcao) {
+
             case 1:
                 criarSessao();
                 break;
-
             case 2:
                 listarSessoes();
                 break;
-        }
+            case 3:
+                iniciarSessao();
+                break;
+}
 
     } while(opcao != 0);
 }
@@ -370,8 +381,8 @@ void listarUsuarios() {
     for(int i = 0; i < numUsuarios; i++) {
 
         printf("\nID: %d\n", listaUsuarios[i].idUsuario);
-        printf("Nome: %s", listaUsuarios[i].nome);
-        printf("Nick: %s", listaUsuarios[i].nickname);
+        printf("Nome: %s\n", listaUsuarios[i].nome);
+        printf("Nick: %s\n", listaUsuarios[i].nickname);
         printf("Status: %s\n", listaUsuarios[i].status);
     }
 }
@@ -405,7 +416,8 @@ void criarSala() {
         return;
     }
 
-    s->numParticipantes = 0;
+    s->participantes[0] = s->idCriador;
+    s->numParticipantes = 1;
 
     strcpy(s->status, "Ativa");
 
@@ -489,6 +501,7 @@ void criarSessao() {
         return;
     }
 
+    strcpy(s->status, "Agendada");
     numSessoes++;
 
     printf("Sessao criada!\n");
@@ -496,45 +509,70 @@ void criarSessao() {
 
 void enviarMensagem() {
 
-    if (numMensagens >= MAX_ITENS) {
-        printf("Limite de mensagens atingido!\n");
-        return;
-    }
-
     if (numUsuarios == 0 || numSalas == 0) {
         printf("Necessario ter usuarios e salas cadastrados!\n");
         return;
     }
 
-    ItemChat *m = &listaMensagens[numMensagens];
+    NoMensagem *novo = (NoMensagem*) malloc(sizeof(NoMensagem));
 
-    m->idMensagem = numMensagens + 1;
-
-    printf("ID Usuario: ");
-    scanf("%d", &m->idUsuario);
-
-    printf("ID Sala: ");
-    scanf("%d", &m->idSala);
-
-    limparBuffer();
-
-    if (m->idUsuario < 1 || m->idUsuario > numUsuarios) {
-        printf("Usuario nao encontrado!\n");
+    if(novo == NULL){
+        printf("Erro de memoria!\n");
         return;
     }
 
-    if (m->idSala < 1 || m->idSala > numSalas) {
+    static int contadorMensagens = 1;
+
+    novo->mensagem.idMensagem = contadorMensagens++;
+
+    printf("ID Usuario: ");
+    scanf("%d", &novo->mensagem.idUsuario);
+
+    printf("ID Sala: ");
+    scanf("%d", &novo->mensagem.idSala);
+
+    limparBuffer();
+
+    if (novo->mensagem.idUsuario < 1 ||
+        novo->mensagem.idUsuario > numUsuarios) {
+
+        printf("Usuario nao encontrado!\n");
+        free(novo);
+        return;
+    }
+
+    if (novo->mensagem.idSala < 1 ||
+        novo->mensagem.idSala > numSalas) {
+
         printf("Sala nao encontrada!\n");
+        free(novo);
         return;
     }
 
     printf("Mensagem: ");
-    fgets(m->mensagem, sizeof(m->mensagem), stdin);
-    removerQuebraLinha(m->mensagem);
+    fgets(novo->mensagem.mensagem,
+          sizeof(novo->mensagem.mensagem),
+          stdin);
 
-    strcpy(m->horario, "20:00");
+    removerQuebraLinha(novo->mensagem.mensagem);
 
-    numMensagens++;
+    strcpy(novo->mensagem.horario, "20:00");
+
+    novo->prox = NULL;
+
+    if(inicioChat == NULL){
+        inicioChat = novo;
+    }
+    else{
+
+        NoMensagem *aux = inicioChat;
+
+        while(aux->prox != NULL){
+            aux = aux->prox;
+        }
+
+        aux->prox = novo;
+    }
 
     printf("Mensagem enviada!\n");
 }
@@ -572,46 +610,90 @@ void listarConteudos(){
 }
 
 void listarSessoes(){
+
     if(numSessoes == 0){
-        printf("Nenhum sessão cadastrada!\n");
+
+        printf("Nenhuma sessao cadastrada!\n");
+        return;
     }
 
     for(int i = 0; i < numSessoes; i++){
+
         printf("\n===== SESSAO =====\n");
-        printf("ID: %d\n", listaSessoes[i].idSessao);
-        printf("Data: %s\n", listaSessoes[i].data);
-        printf("Horario: %s\n", listaSessoes[i].horario);
-        printf("Sala: %d\n", listaSessoes[i].idSala);
-        printf("Conteudo: %d\n", listaSessoes[i].idConteudo);
+
+        printf("ID: %d\n",
+               listaSessoes[i].idSessao);
+
+        printf("Data: %s\n",
+               listaSessoes[i].data);
+
+        printf("Horario: %s\n",
+               listaSessoes[i].horario);
+
+        printf("Sala: %s\n",
+               listaSalas[
+               listaSessoes[i].idSala - 1
+               ].nomeSala);
+
+        printf("Conteudo: %s\n",
+               listaConteudos[
+               listaSessoes[i].idConteudo - 1
+               ].titulo);
+
+        printf("Status: %s\n",
+               listaSessoes[i].status);
     }
 }
 
+void iniciarSessao(){
+
+    int idSessao;
+
+    if(numSessoes == 0){
+        printf("Nenhuma sessao cadastrada!\n");
+        return;
+    }
+
+    printf("ID da Sessao: ");
+    scanf("%d", &idSessao);
+    limparBuffer();
+
+    if(idSessao < 1 || idSessao > numSessoes){
+        printf("Sessao nao encontrada!\n");
+        return;
+    }
+
+    strcpy(
+        listaSessoes[idSessao - 1].status,
+        "Em Exibicao"
+    );
+
+    printf("Sessao iniciada com sucesso!\n");
+}
+
 void listarMensagens(){
-    if(numMensagens == 0){
+
+    if(inicioChat == NULL){
         printf("Nenhuma mensagem enviada!\n");
         return;
     }
 
-    for(int i = 0; i < numMensagens; i++){
+    NoMensagem *aux = inicioChat;
 
-        printf("\n[%s]\n", listaMensagens[i].horario);
+    while(aux != NULL){
+
+        printf("\n[%s]\n",
+               aux->mensagem.horario);
 
         printf("%s:\n",
-            listaUsuarios[
-            listaMensagens[i].idUsuario - 1
-            ].nickname);
+               listaUsuarios[
+               aux->mensagem.idUsuario - 1
+               ].nickname);
 
         printf("%s\n",
-            listaMensagens[i].mensagem);
-}
+               aux->mensagem.mensagem);
 
-    for(int i = 0; i < numMensagens; i++){
-        printf("\n===== MENSAGEM =====\n");
-        printf("ID: %d\n", listaMensagens[i].idMensagem);
-        printf("Usuario: %d\n", listaMensagens[i].idUsuario);
-        printf("Sala: %d\n", listaMensagens[i].idSala);
-        printf("Horario: %s\n", listaMensagens[i].horario);
-        printf("Texto: %s\n", listaMensagens[i].mensagem);
+        aux = aux->prox;
     }
 }
 
@@ -646,6 +728,31 @@ void participarSessao(){
 
     Sala *sala = &listaSalas[listaSessoes[idSessao - 1].idSala - 1];
     Conteudo *conteudo = &listaConteudos[listaSessoes[idSessao - 1].idConteudo - 1];
+
+    int participanteEncontrado = 0;
+
+    for(int i = 0; i < sala->numParticipantes; i++){
+
+        if(sala->participantes[i] == idUsuario){
+
+            participanteEncontrado = 1;
+            break;
+        }
+    }
+
+    if(!participanteEncontrado){
+
+        printf("Voce nao esta nesta sala!\n");
+        printf("Entre na sala antes de participar da sessao.\n");
+        return;
+    }
+
+    if(strcmp(listaSessoes[idSessao - 1].status, "Em Exibicao") != 0){
+    printf("A sessao ainda nao foi iniciada!\n");
+    return;
+
+    }
+
 
     do {
 
@@ -695,23 +802,111 @@ void participarSessao(){
     } while(opcao != 3);
 }
 
-void iniciarSessao(){
-    int idSessao;
+void carregarDadosIniciais(){
 
-    printf("ID da Sessão: ");
-    scanf("%d", &idSessao);
+    //USUARIOS
+    listaUsuarios[0].idUsuario = 1;
+    strcpy(listaUsuarios[0].nome, "Samuel");
+    strcpy(listaUsuarios[0].nickname, "Sam");
+    strcpy(listaUsuarios[0].status, "Online");
 
-      limparBuffer();
+    listaUsuarios[1].idUsuario = 2;
+    strcpy(listaUsuarios[1].nome, "Leticia");
+    strcpy(listaUsuarios[1].nickname, "lelete");
+    strcpy(listaUsuarios[1].status, "Online");
 
-    if(idSessao < 1 || idSessao > numSessoes){
-        printf("Sessao nao encontrada!\n");
-        return;
-    }
+    listaUsuarios[2].idUsuario = 3;
+    strcpy(listaUsuarios[2].nome, "Ana Carolina");
+    strcpy(listaUsuarios[2].nickname, "Ana");
+    strcpy(listaUsuarios[2].status, "Online");
 
-    strcpy(
-        listaSessoes[idSessao - 1].status,
-        "Em Exibicao"
-    );
+    numUsuarios = 3;
 
-    printf("Sessao iniciada!\n");
+    //SERIES
+    listaConteudos[0].idConteudo = 1;
+    strcpy(listaConteudos[0].titulo, "Stranger Things");
+    strcpy(listaConteudos[0].plataforma, "Netflix");
+    strcpy(listaConteudos[0].genero, "Ficcao");
+
+    listaConteudos[1].idConteudo = 2;
+    strcpy(listaConteudos[1].titulo, "The Boys");
+    strcpy(listaConteudos[1].plataforma, "Prime Video");
+    strcpy(listaConteudos[1].genero, "Acao");
+
+    listaConteudos[2].idConteudo = 3;
+    strcpy(listaConteudos[2].titulo, "Loki");
+    strcpy(listaConteudos[2].plataforma, "Disney+");
+    strcpy(listaConteudos[2].genero, "Aventura");
+
+    numConteudos = 3;
+
+    // SALAS
+    listaSalas[0].idSala = 1;
+    strcpy(listaSalas[0].nomeSala, "Maratona Series");
+    listaSalas[0].idCriador = 1;
+
+    listaSalas[0].participantes[0] = 1;
+    listaSalas[0].participantes[1] = 2;
+
+    listaSalas[0].numParticipantes = 2;
+
+    strcpy(listaSalas[0].status, "Ativa");
+
+    // SALA 2
+    listaSalas[1].idSala = 2;
+    strcpy(listaSalas[1].nomeSala, "Filmes de Acao");
+    listaSalas[1].idCriador = 2;
+
+    listaSalas[1].participantes[0] = 2;
+    listaSalas[1].participantes[1] = 3;
+
+    listaSalas[1].numParticipantes = 2;
+
+    strcpy(listaSalas[1].status, "Ativa");
+
+    numSalas = 2;
+
+    // SESSÕES
+    listaSessoes[0].idSessao = 1;
+    strcpy(listaSessoes[0].data, "15/06/2026");
+    strcpy(listaSessoes[0].horario, "20:00");
+
+    listaSessoes[0].idSala = 1;
+    listaSessoes[0].idConteudo = 1;
+
+    strcpy(listaSessoes[0].status, "Agendada");
+
+    // SESSAO 1
+    listaSessoes[0].idSessao = 1;
+    strcpy(listaSessoes[0].data, "15/06/2026");
+    strcpy(listaSessoes[0].horario, "20:00");
+    listaSessoes[0].idSala = 1;
+    listaSessoes[0].idConteudo = 1;
+    strcpy(listaSessoes[0].status, "Agendada");
+
+    // SESSAO 2
+    listaSessoes[1].idSessao = 2;
+    strcpy(listaSessoes[1].data, "16/06/2026");
+    strcpy(listaSessoes[1].horario, "21:00");
+    listaSessoes[1].idSala = 1;
+    listaSessoes[1].idConteudo = 2;
+    strcpy(listaSessoes[1].status, "Agendada");
+
+    // SESSAO 3
+    listaSessoes[2].idSessao = 3;
+    strcpy(listaSessoes[2].data, "17/06/2026");
+    strcpy(listaSessoes[2].horario, "19:30");
+    listaSessoes[2].idSala = 1;
+    listaSessoes[2].idConteudo = 3;
+    strcpy(listaSessoes[2].status, "Agendada");
+
+    // SESSAO 4
+    listaSessoes[3].idSessao = 4;
+    strcpy(listaSessoes[3].data, "18/06/2026");
+    strcpy(listaSessoes[3].horario, "22:00");
+    listaSessoes[3].idSala = 2;
+    listaSessoes[3].idConteudo = 2;
+    strcpy(listaSessoes[3].status, "Agendada");
+
+    numSessoes = 4;
 }
