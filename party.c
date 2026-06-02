@@ -33,6 +33,7 @@ typedef struct {
     char horario[10];
     int idSala;
     int idConteudo;
+    char status[20];
 } SessaoDeExibicao;
 
 typedef struct {
@@ -68,6 +69,7 @@ void listarUsuarios();
 void gerenciarSalas();
 void criarSala();
 void listarSalas();
+void entrarNaSala();
 
 void gerenciarConteudos();
 void cadastrarConteudo();
@@ -81,8 +83,15 @@ void gerenciarChat();
 void enviarMensagem();
 void listarMensagens();
 
+void participarSessao();
+
 void limparBuffer();
 void pressionarEnterParaContinuar();
+void removerQuebraLinha(char *texto);
+
+void removerQuebraLinha(char *texto) {
+    texto[strcspn(texto, "\n")] = '\0';
+}
 
 int main(){
     int opcao;
@@ -108,8 +117,11 @@ int main(){
                 gerenciarSessoes();
                 break;
             case 5:
-                gerenciarChat();
+                participarSessao();
                 break;
+            case 6:
+            gerenciarChat();
+            break;
             case 9:
                 printf("\nSaindo do sistema... Ate mais!\n");
                 break;
@@ -131,7 +143,8 @@ void exibirMenuPrincipal() {
     printf("| [2] Gerenciar Salas               |\n");
     printf("| [3] Gerenciar Conteudos           |\n");
     printf("| [4] Gerenciar Sessoes             |\n");
-    printf("| [5] Chat                          |\n");
+    printf("| [5] Participar de Sessao          |\n");
+    printf("| [6] Chat                          |\n");
     printf("| [9] Sair                          |\n");
     printf("+-----------------------------------+\n");
 }
@@ -176,9 +189,9 @@ void gerenciarSalas() {
     int opcao;
 
     do {
-        printf("\n=== SALAS ===\n");
         printf("1 - Criar Sala\n");
         printf("2 - Listar Salas\n");
+        printf("3 - Entrar na Sala\n");
         printf("0 - Voltar\n");
         printf("Opcao: ");
 
@@ -189,13 +202,63 @@ void gerenciarSalas() {
             case 1:
                 criarSala();
                 break;
-
             case 2:
                 listarSalas();
                 break;
+            case 3:
+                entrarNaSala();
+                break;
         }
-
     } while(opcao != 0);
+}
+
+void entrarNaSala(){
+    int idSala;
+    int idUsuario;
+
+    if(numSalas == 0){
+        printf("Nenhuma sala cadastrada!\n");
+        return;
+    }
+
+    if(numUsuarios == 0){
+        printf("Nenhum usuario cadastrado!\n");
+        return;
+    }
+
+    printf("ID da Sala: ");
+    scanf("%d", &idSala);
+
+    printf("ID do Usuario: ");
+    scanf("%d", &idUsuario);
+
+    limparBuffer();
+
+    if(idSala < 1 || idSala > numSalas){
+        printf("Sala nao encontrada!\n");
+        return;
+    }
+
+    if(idUsuario < 1 || idUsuario > numUsuarios){
+        printf("Usuario nao encontrado!\n");
+        return;
+    }
+
+    Sala *s = &listaSalas[idSala - 1];
+
+    if(s->numParticipantes >= 20){
+        printf("Sala cheia!\n");
+        return;
+    }
+
+    s->participantes[s->numParticipantes] = idUsuario;
+    s->numParticipantes++;
+
+    printf(
+        "%s entrou na sala %s!\n",
+        listaUsuarios[idUsuario - 1].nickname,
+        s->nomeSala
+    );
 }
 
 void gerenciarConteudos() {
@@ -278,17 +341,22 @@ void gerenciarChat() {
 
 void cadastrarUsuario() {
 
-    if(numUsuarios >= MAX_ITENS) return;
+    if (numUsuarios >= MAX_ITENS) {
+    printf("Limite de usuarios atingido!\n");
+    return;
+}
 
     Usuario *u = &listaUsuarios[numUsuarios];
 
     u->idUsuario = numUsuarios + 1;
 
     printf("Nome: ");
-    fgets(u->nome, 100, stdin);
+    fgets(u->nome, sizeof(u->nome), stdin);
+    removerQuebraLinha(u->nome);
 
     printf("Nickname: ");
-    fgets(u->nickname, 50, stdin);
+    fgets(u->nickname, sizeof(u->nickname), stdin);
+    removerQuebraLinha(u->nickname);
 
     strcpy(u->status, "Online");
 
@@ -310,18 +378,32 @@ void listarUsuarios() {
 
 void criarSala() {
 
-    if(numSalas >= MAX_ITENS) return;
+    if (numSalas >= MAX_ITENS) {
+        printf("Limite de salas atingido!\n");
+        return;
+    }
+
+    if (numUsuarios == 0) {
+        printf("Cadastre um usuario antes de criar uma sala!\n");
+        return;
+    }
 
     Sala *s = &listaSalas[numSalas];
 
     s->idSala = numSalas + 1;
 
     printf("Nome da Sala: ");
-    fgets(s->nomeSala, 100, stdin);
+    fgets(s->nomeSala, sizeof(s->nomeSala), stdin);
+    removerQuebraLinha(s->nomeSala);
 
     printf("ID do Criador: ");
     scanf("%d", &s->idCriador);
     limparBuffer();
+
+    if (s->idCriador < 1 || s->idCriador > numUsuarios) {
+        printf("Usuario nao encontrado!\n");
+        return;
+    }
 
     s->numParticipantes = 0;
 
@@ -329,25 +411,31 @@ void criarSala() {
 
     numSalas++;
 
-    printf("Sala criada!\n");
+    printf("Sala criada com sucesso!\n");
 }
 
 void cadastrarConteudo() {
 
-    if(numConteudos >= MAX_ITENS) return;
+    if (numConteudos >= MAX_ITENS) {
+        printf("Limite de conteudos atingido!\n");
+        return;
+    }
 
     Conteudo *c = &listaConteudos[numConteudos];
 
     c->idConteudo = numConteudos + 1;
 
     printf("Titulo: ");
-    fgets(c->titulo, 100, stdin);
+    fgets(c->titulo, sizeof(c->titulo), stdin);
+    removerQuebraLinha(c->titulo);
 
     printf("Plataforma: ");
-    fgets(c->plataforma, 50, stdin);
+    fgets(c->plataforma, sizeof(c->plataforma), stdin);
+    removerQuebraLinha(c->plataforma);
 
     printf("Genero: ");
-    fgets(c->genero, 50, stdin);
+    fgets(c->genero, sizeof(c->genero), stdin);
+    removerQuebraLinha(c->genero);
 
     numConteudos++;
 
@@ -356,17 +444,32 @@ void cadastrarConteudo() {
 
 void criarSessao() {
 
-    if(numSessoes >= MAX_ITENS) return;
+    if (numSessoes >= MAX_ITENS) {
+        printf("Limite de sessoes atingido!\n");
+        return;
+    }
+
+    if (numSalas == 0) {
+        printf("Cadastre uma sala primeiro!\n");
+        return;
+    }
+
+    if (numConteudos == 0) {
+        printf("Cadastre um conteudo primeiro!\n");
+        return;
+    }
 
     SessaoDeExibicao *s = &listaSessoes[numSessoes];
 
     s->idSessao = numSessoes + 1;
 
     printf("Data: ");
-    fgets(s->data, 15, stdin);
+    fgets(s->data, sizeof(s->data), stdin);
+    removerQuebraLinha(s->data);
 
     printf("Horario: ");
-    fgets(s->horario, 10, stdin);
+    fgets(s->horario, sizeof(s->horario), stdin);
+    removerQuebraLinha(s->horario);
 
     printf("ID Sala: ");
     scanf("%d", &s->idSala);
@@ -376,6 +479,16 @@ void criarSessao() {
 
     limparBuffer();
 
+    if (s->idSala < 1 || s->idSala > numSalas) {
+        printf("Sala nao encontrada!\n");
+        return;
+    }
+
+    if (s->idConteudo < 1 || s->idConteudo > numConteudos) {
+        printf("Conteudo nao encontrado!\n");
+        return;
+    }
+
     numSessoes++;
 
     printf("Sessao criada!\n");
@@ -383,7 +496,15 @@ void criarSessao() {
 
 void enviarMensagem() {
 
-    if(numMensagens >= MAX_ITENS) return;
+    if (numMensagens >= MAX_ITENS) {
+        printf("Limite de mensagens atingido!\n");
+        return;
+    }
+
+    if (numUsuarios == 0 || numSalas == 0) {
+        printf("Necessario ter usuarios e salas cadastrados!\n");
+        return;
+    }
 
     ItemChat *m = &listaMensagens[numMensagens];
 
@@ -397,12 +518,200 @@ void enviarMensagem() {
 
     limparBuffer();
 
+    if (m->idUsuario < 1 || m->idUsuario > numUsuarios) {
+        printf("Usuario nao encontrado!\n");
+        return;
+    }
+
+    if (m->idSala < 1 || m->idSala > numSalas) {
+        printf("Sala nao encontrada!\n");
+        return;
+    }
+
     printf("Mensagem: ");
-    fgets(m->mensagem, 300, stdin);
+    fgets(m->mensagem, sizeof(m->mensagem), stdin);
+    removerQuebraLinha(m->mensagem);
 
     strcpy(m->horario, "20:00");
 
     numMensagens++;
 
     printf("Mensagem enviada!\n");
+}
+
+void listarSalas(){
+    if(numSalas == 0) {
+        printf("Nenhuma sala cadastrada!\n");
+        return;
+    }
+    for(int i = 0; i < numSalas; i++){
+        printf("\nID: %d\n", listaSalas[i].idSala);
+        printf("Nome: %s", listaSalas[i].nomeSala);
+        printf("Criador: %d\n", listaSalas[i].idCriador);
+        printf("Participantes: %d\n",
+       listaSalas[i].numParticipantes);
+
+        printf("Status: %s\n",
+        listaSalas[i].status);
+    }
+}
+
+void listarConteudos(){
+    if(numConteudos == 0){
+        printf("Nenhum conteudo cadastrado!\n");
+        return;
+    }
+
+    for(int i = 0; i < numConteudos; i++){
+        printf("\n========Conteudo========\n");
+        printf("ID: %d\n", listaConteudos[i].idConteudo);
+        printf("Titulo: %s\n", listaConteudos[i].titulo);
+        printf("Plataforma: %s\n", listaConteudos[i].plataforma);
+        printf("Genero: %s\n", listaConteudos[i].genero);
+    }
+}
+
+void listarSessoes(){
+    if(numSessoes == 0){
+        printf("Nenhum sessão cadastrada!\n");
+    }
+
+    for(int i = 0; i < numSessoes; i++){
+        printf("\n===== SESSAO =====\n");
+        printf("ID: %d\n", listaSessoes[i].idSessao);
+        printf("Data: %s\n", listaSessoes[i].data);
+        printf("Horario: %s\n", listaSessoes[i].horario);
+        printf("Sala: %d\n", listaSessoes[i].idSala);
+        printf("Conteudo: %d\n", listaSessoes[i].idConteudo);
+    }
+}
+
+void listarMensagens(){
+    if(numMensagens == 0){
+        printf("Nenhuma mensagem enviada!\n");
+        return;
+    }
+
+    for(int i = 0; i < numMensagens; i++){
+
+        printf("\n[%s]\n", listaMensagens[i].horario);
+
+        printf("%s:\n",
+            listaUsuarios[
+            listaMensagens[i].idUsuario - 1
+            ].nickname);
+
+        printf("%s\n",
+            listaMensagens[i].mensagem);
+}
+
+    for(int i = 0; i < numMensagens; i++){
+        printf("\n===== MENSAGEM =====\n");
+        printf("ID: %d\n", listaMensagens[i].idMensagem);
+        printf("Usuario: %d\n", listaMensagens[i].idUsuario);
+        printf("Sala: %d\n", listaMensagens[i].idSala);
+        printf("Horario: %s\n", listaMensagens[i].horario);
+        printf("Texto: %s\n", listaMensagens[i].mensagem);
+    }
+}
+
+void participarSessao(){
+
+    int idUsuario;
+    int idSessao;
+    int opcao;
+
+    if(numSessoes == 0){
+        printf("Nenhuma sessao disponivel!\n");
+        return;
+    }
+
+    printf("ID Usuario: ");
+    scanf("%d", &idUsuario);
+
+    printf("ID Sessao: ");
+    scanf("%d", &idSessao);
+
+    limparBuffer();
+
+    if(idUsuario < 1 || idUsuario > numUsuarios){
+        printf("Usuario nao encontrado!\n");
+        return;
+    }
+
+    if(idSessao < 1 || idSessao > numSessoes){
+        printf("Sessao nao encontrada!\n");
+        return;
+    }
+
+    Sala *sala = &listaSalas[listaSessoes[idSessao - 1].idSala - 1];
+    Conteudo *conteudo = &listaConteudos[listaSessoes[idSessao - 1].idConteudo - 1];
+
+    do {
+
+        printf("\n================================\n");
+        printf(" WATCH PARTY EM ANDAMENTO\n");
+        printf("================================\n");
+
+        printf("Usuario: %s\n",
+               listaUsuarios[idUsuario - 1].nickname);
+
+        printf("Sala: %s\n",
+               sala->nomeSala);
+
+        printf("Conteudo: %s\n",
+               conteudo->titulo);
+
+        printf("Plataforma: %s\n",
+               conteudo->plataforma);
+
+        printf("Participantes: %d\n",
+               sala->numParticipantes);
+
+        printf("Status: %s\n",
+               listaSessoes[idSessao - 1].status);
+
+        printf("================================\n");
+
+        printf("1 - Ver mensagens\n");
+        printf("2 - Enviar mensagem\n");
+        printf("3 - Sair da sessao\n");
+        printf("Opcao: ");
+
+        scanf("%d", &opcao);
+        limparBuffer();
+
+        switch(opcao){
+
+            case 1:
+                listarMensagens();
+                break;
+
+            case 2:
+                enviarMensagem();
+                break;
+        }
+
+    } while(opcao != 3);
+}
+
+void iniciarSessao(){
+    int idSessao;
+
+    printf("ID da Sessão: ");
+    scanf("%d", &idSessao);
+
+      limparBuffer();
+
+    if(idSessao < 1 || idSessao > numSessoes){
+        printf("Sessao nao encontrada!\n");
+        return;
+    }
+
+    strcpy(
+        listaSessoes[idSessao - 1].status,
+        "Em Exibicao"
+    );
+
+    printf("Sessao iniciada!\n");
 }
