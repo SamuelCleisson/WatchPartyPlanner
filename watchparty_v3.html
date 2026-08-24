@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watch Party Planner</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<style>
+#chat-box{
+    height:250px;
+    overflow-y:auto;
+    border:1px solid #e0ddd6;
+    border-radius:10px;
+    background:#faf9f6;
+    padding:15px;
+    margin-bottom:15px;
+}
+
+.chat-msg{
+    background:white;
+    border-radius:10px;
+    padding:10px 15px;
+    margin-bottom:12px;
+    border:1px solid #e0ddd6;
+}
+
+.chat-autor{
+    color:#D85A30;
+    font-weight:600;
+    margin-bottom:5px;
+}
+
+.chat-input{
+    display:flex;
+    gap:10px;
+}
+
+.chat-input input{
+    flex:1;
+    padding:10px;
+    border:1px solid #d0cec7;
+    border-radius:8px;
+    font-size:14px;
+}
+.player-fake{
+    background:#faf9f6;
+    border:1px solid #e0ddd6;
+    border-radius:10px;
+    padding:20px;
+    margin-bottom:20px;
+}
+
+.player-screen{
+    height:250px;
+    background:#1a1a18;
+    border-radius:10px;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+
+    color:white;
+}
+
+.player-screen i{
+    font-size:70px;
+    color:#D85A30;
+    margin-bottom:20px;
+}
+
+.player-title{
+    font-size:15px;
+    color:#cccccc;
+    margin-bottom:8px;
+}
+
+.player-movie{
+    font-size:24px;
+    font-weight:600;
+}
+
+.player-controls{
+    display:flex;
+    justify-content:center;
+    gap:30px;
+    margin-top:20px;
+}
+
+.player-controls i{
+    font-size:28px;
+    color:#D85A30;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.player-controls i:hover{
+    transform:scale(1.15);
+}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, sans-serif; background: #f5f4f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .app { width: 100%; max-width: 820px; border: 1px solid #e0ddd6; border-radius: 14px; overflow: hidden; background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,0.08); position: relative; }
+  .topbar { padding: 16px 24px; border-bottom: 1px solid #e0ddd6; display: flex; align-items: center; justify-content: space-between; background: #fff; }
+  .logo { font-size: 16px; font-weight: 600; color: #1a1a18; }
+  .logo span { color: #D85A30; }
+  .user-badge { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #6b6a65; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%; background: #faeeda; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #854f0b; }
+  .content { padding: 24px; min-height: 480px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  h2 { font-size: 18px; font-weight: 500; color: #1a1a18; margin-bottom: 20px; }
+  .user-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-top: 8px; }
+  .user-card { border: 1px solid #e0ddd6; border-radius: 10px; padding: 20px 16px; cursor: pointer; text-align: center; transition: all 0.15s; background: #fff; }
+  .user-card:hover { border-color: #D85A30; background: #fff8f6; }
+  .user-card .av { width: 48px; height: 48px; border-radius: 50%; background: #faeeda; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; color: #854f0b; margin: 0 auto 10px; }
+  .user-card .name { font-size: 14px; font-weight: 500; color: #1a1a18; }
+  .user-card .nick { font-size: 12px; color: #6b6a65; margin-top: 2px; }
+  .menu-list { display: flex; flex-direction: column; gap: 8px; max-width: 400px; }
+  .menu-btn { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid #e0ddd6; border-radius: 10px; background: #fff; cursor: pointer; font-size: 14px; color: #1a1a18; font-family: inherit; transition: all 0.15s; text-align: left; }
+  .menu-btn:hover { border-color: #D85A30; background: #fff8f6; }
+  .menu-btn i { font-size: 18px; color: #D85A30; width: 24px; }
+  .menu-btn .desc { font-size: 12px; color: #6b6a65; margin-top: 1px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-size: 13px; border-radius: 8px; border: 1px solid #d0cec7; background: transparent; color: #1a1a18; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+  .btn:hover { background: #f5f4f0; }
+  .btn-primary { background: #D85A30; color: #fff; border-color: #D85A30; }
+  .btn-primary:hover { background: #c24f28; }
+  .btn-back { margin-bottom: 20px; }
+  .sala-card { border: 1px solid #e0ddd6; border-radius: 10px; padding: 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; background: #fff; }
+  .sala-card .sala-info .sala-nome { font-size: 14px; font-weight: 500; color: #1a1a18; }
+  .sala-card .sala-info .sala-meta { font-size: 12px; color: #6b6a65; margin-top: 3px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+  .badge-green { background: #eaf3de; color: #3b6d11; }
+  .badge-blue { background: #e6f1fb; color: #185fa5; }
+  .conteudo-card { border: 1px solid #e0ddd6; border-radius: 10px; padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 14px; background: #fff; cursor: pointer; transition: all 0.15s; }
+  .conteudo-card:hover { border-color: #D85A30; background: #fff8f6; }
+  .conteudo-card.selected { border-color: #D85A30; background: #fff8f6; }
+  .conteudo-card .plat { font-size: 11px; color: #6b6a65; margin-top: 2px; }
+  .conteudo-card .titulo { font-size: 14px; font-weight: 500; color: #1a1a18; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 12px; color: #6b6a65; margin-bottom: 5px; }
+  .form-group input { width: 100%; padding: 8px 12px; font-size: 14px; border: 1px solid #d0cec7; border-radius: 8px; font-family: inherit; outline: none; }
+  .form-group input:focus { border-color: #D85A30; }
+  .notif-list { display: flex; flex-direction: column; gap: 8px; }
+  .notif-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; background: #faf9f6; border-radius: 8px; border: 1px solid #e0ddd6; }
+  .notif-item i { font-size: 16px; color: #D85A30; margin-top: 1px; flex-shrink: 0; }
+  .notif-item span { font-size: 13px; color: #1a1a18; }
+  .empty { text-align: center; padding: 48px 0; color: #6b6a65; font-size: 13px; }
+  .empty i { font-size: 36px; display: block; margin-bottom: 10px; opacity: 0.3; }
+  .sala-view { background: #faf9f6; border-radius: 10px; padding: 20px; margin-bottom: 20px; border: 1px solid #e0ddd6; }
+  .sala-view .sv-title { font-size: 16px; font-weight: 500; color: #1a1a18; margin-bottom: 4px; }
+  .sala-view .sv-meta { font-size: 13px; color: #6b6a65; }
+  .sala-view .sv-watching { margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0ddd6; font-size: 13px; color: #1a1a18; }
+  .participantes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .part-badge { display: flex; align-items: center; gap: 5px; padding: 4px 10px; background: #fff; border: 1px solid #e0ddd6; border-radius: 99px; font-size: 12px; color: #1a1a18; }
+  .confirm-box { background: #fcebeb; border: 1px solid #f09595; border-radius: 10px; padding: 16px; margin-bottom: 16px; font-size: 14px; color: #a32d2d; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="topbar">
+    <div class="logo">Watch<span>Party</span> ▶</div>
+    <div class="user-badge" id="user-badge" style="display:none;">
+      <div class="avatar" id="topbar-avatar"></div>
+      <span id="topbar-nick"></span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="screen active" id="screen-login">
+      <h2>Quem está assistindo hoje?</h2>
+      <div class="user-grid" id="user-grid"></div>
+    </div>
+
+    <div class="screen" id="screen-menu">
+      <button class="btn btn-back" onclick="logout()"><i class="ti ti-arrow-left"></i> Trocar usuário</button>
+      <div class="menu-list">
+        <button class="menu-btn" onclick="ir('screen-salas')">
+          <i class="ti ti-door"></i>
+          <div><div>Ver salas disponíveis</div><div class="desc">Entre em uma sala existente</div></div>
+        </button>
+        <button class="menu-btn" onclick="ir('screen-criar-sala')">
+          <i class="ti ti-plus"></i>
+          <div><div>Criar uma sala</div><div class="desc">Escolha um conteúdo e abra sua sala</div></div>
+        </button>
+        <button class="menu-btn" onclick="encerrarSala()">
+          <i class="ti ti-door-off"></i>
+          <div><div>Encerrar minha sala</div><div class="desc">Fecha a sala que você criou</div></div>
+        </button>
+        <button class="menu-btn" onclick="ir('screen-catalogo')">
+          <i class="ti ti-movie"></i>
+          <div><div>Ver catálogo</div><div class="desc">Filmes e séries disponíveis</div></div>
+        </button>
+        <button class="menu-btn" onclick="ir('screen-notificacoes')">
+          <i class="ti ti-bell"></i>
+          <div><div>Ver notificações</div><div class="desc">Atividade recente do sistema</div></div>
+        </button>
+        <button class="menu-btn" onclick="ir('screen-remover')">
+          <i class="ti ti-user-minus"></i>
+          <div><div>Remover minha conta</div><div class="desc">Apagar seu usuário do sistema</div></div>
+        </button>
+      </div>
+    </div>
+
+    <div class="screen" id="screen-salas">
+      <button class="btn btn-back" onclick="ir('screen-menu')"><i class="ti ti-arrow-left"></i> Voltar</button>
+      <h2>Salas disponíveis</h2>
+      <div id="lista-salas"></div>
+    </div>
+
+    <div class="screen" id="screen-sala-view">
+
+  <button class="btn btn-back" onclick="ir('screen-salas')">
+    <i class="ti ti-arrow-left"></i> Voltar
+  </button>
+
+  <div class="sala-view" id="sala-view-info"></div>
+  <div class="player-fake">
+
+    <div class="player-screen">
+
+        <i class="ti ti-player-play-filled"></i>
+
+        <div class="player-title">
+            Assistindo agora
+        </div>
+
+        <div class="player-movie" id="filme-atual">
+            Stranger Things
+        </div>
+
+    </div>
+
+    <div class="player-controls">
+
+        <i class="ti ti-player-skip-back"></i>
+        <i class="ti ti-player-play"></i>
+        <i class="ti ti-player-pause"></i>
+        <i class="ti ti-player-skip-forward"></i>
+
+    </div>
+
+</div>
+
+  <h2>Chat da Sala</h2>
+
+  <div id="chat-box"></div>
+
+  <div class="chat-input">
+    <input
+      type="text"
+      id="mensagem"
+      placeholder="Digite uma mensagem..."
+    >
+
+    <button class="btn btn-primary" onclick="enviarMensagem()">
+      Enviar
+    </button>
+  </div>
+
+</div>
+
+    <div class="screen" id="screen-criar-sala">
+      <button class="btn btn-back" onclick="ir('screen-menu')"><i class="ti ti-arrow-left"></i> Voltar</button>
+      <h2>Criar sala</h2>
+      <div class="form-group">
+        <label>Nome da sala</label>
+        <input type="text" id="nova-sala-nome" placeholder="Ex: Maratona de Terror">
+      </div>
+      <div style="margin-bottom:12px; font-size:13px; color:#6b6a65;">Escolha o conteúdo:</div>
+      <div id="criar-sala-catalogo"></div>
+      <div style="margin-top:16px;">
+        <button class="btn btn-primary" onclick="criarSala()"><i class="ti ti-plus"></i> Criar sala</button>
+      </div>
+    </div>
+
+    <div class="screen" id="screen-catalogo">
+      <button class="btn btn-back" onclick="ir('screen-menu')"><i class="ti ti-arrow-left"></i> Voltar</button>
+      <h2>Catálogo</h2>
+      <div id="lista-catalogo"></div>
+    </div>
+
+    <div class="screen" id="screen-notificacoes">
+      <button class="btn btn-back" onclick="ir('screen-menu')"><i class="ti ti-arrow-left"></i> Voltar</button>
+      <h2>Notificações</h2>
+      <div id="lista-notificacoes"></div>
+    </div>
+
+    <div class="screen" id="screen-remover">
+      <button class="btn btn-back" onclick="ir('screen-menu')"><i class="ti ti-arrow-left"></i> Voltar</button>
+      <h2>Remover minha conta</h2>
+      <div class="confirm-box"><i class="ti ti-alert-triangle"></i> Esta ação é irreversível. Suas salas serão encerradas.</div>
+      <button class="btn" style="color:#a32d2d;border-color:#f09595;" onclick="removerConta()"><i class="ti ti-trash"></i> Confirmar remoção</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let usuarios = [
+  {id:1, nome:'Samuel Cleisson', nickname:'Sam', status:'Offline'},
+  {id:2, nome:'Leticia Karen', nickname:'lelete', status:'Offline'},
+  {id:3, nome:'Ana Carolina', nickname:'Ana', status:'Offline'}
+];
+
+let salas = [
+  {id:1, nome:'Maratona Series', criador:1, participantes:[1,2], status:'Ativa', conteudo:1}
+];
+let nextSalaId = 2;
+
+let conteudos = [
+  {id:1, titulo:'Stranger Things', plataforma:'Netflix', genero:'Ficção'},
+  {id:2, titulo:'The Boys', plataforma:'Prime Video', genero:'Ação'},
+  {id:3, titulo:'Loki', plataforma:'Disney+', genero:'Aventura'},
+  {id:4, titulo:'Breaking Bad', plataforma:'Netflix', genero:'Drama'},
+  {id:5, titulo:'The Last of Us', plataforma:'Max', genero:'Drama'},
+  {id:6, titulo:'Dark', plataforma:'Netflix', genero:'Ficção'},
+  {id:7, titulo:'Arcane', plataforma:'Netflix', genero:'Animação'},
+  {id:8, titulo:'Round 6', plataforma:'Netflix', genero:'Suspense'},
+  {id:9, titulo:'La Casa de Papel', plataforma:'Netflix', genero:'Ação'},
+  {id:10, titulo:'The Witcher', plataforma:'Netflix', genero:'Fantasia'},
+  {id:11, titulo:'Invincible', plataforma:'Prime Video', genero:'Animação'},
+  {id:12, titulo:'Fallout', plataforma:'Prime Video', genero:'Ficção'},
+  {id:13, titulo:'Reacher', plataforma:'Prime Video', genero:'Ação'},
+  {id:14, titulo:'Gen V', plataforma:'Prime Video', genero:'Ação'},
+  {id:15, titulo:'Jack Ryan', plataforma:'Prime Video', genero:'Suspense'},
+  {id:16, titulo:'WandaVision', plataforma:'Disney+', genero:'Ficção'},
+  {id:17, titulo:'Demolidor', plataforma:'Disney+', genero:'Ação'},
+  {id:18, titulo:'Hawkeye', plataforma:'Disney+', genero:'Ação'},
+  {id:19, titulo:'Percy Jackson', plataforma:'Disney+', genero:'Fantasia'},
+  {id:20, titulo:"X-Men '97", plataforma:'Disney+', genero:'Animação'},
+  {id:21, titulo:'House of the Dragon', plataforma:'Max', genero:'Fantasia'},
+  {id:22, titulo:'Game of Thrones', plataforma:'Max', genero:'Fantasia'},
+  {id:23, titulo:'Chernobyl', plataforma:'Max', genero:'Drama'},
+  {id:24, titulo:'Rick and Morty', plataforma:'Max', genero:'Animação'},
+  {id:25, titulo:'The Penguin', plataforma:'Max', genero:'Crime'}
+];
+
+let notificacoes = [];
+let usuarioLogado = null;
+let conteudoSelecionado = null;
+
+let mensagens = [];
+
+function adicionarNotificacao(msg) {
+  notificacoes.push(msg);
+}
+
+function getUsuario(id) { return usuarios.find(u=>u.id===id); }
+function getConteudo(id) { return conteudos.find(c=>c.id===id); }
+function iniciais(nick) { return nick.substring(0,2).toUpperCase(); }
+
+function ir(tela) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(tela).classList.add('active');
+  if(tela==='screen-salas') renderSalas();
+  if(tela==='screen-catalogo') renderCatalogo();
+  if(tela==='screen-notificacoes') renderNotificacoes();
+  if(tela==='screen-criar-sala') renderCriarSala();
+}
+
+function renderLogin() {
+  const grid = document.getElementById('user-grid');
+  grid.innerHTML = usuarios.map(u=>`
+    <div class="user-card" onclick="login(${u.id})">
+      <div class="av">${iniciais(u.nickname)}</div>
+      <div class="name">${u.nome}</div>
+      <div class="nick">@${u.nickname}</div>
+    </div>`).join('');
+}
+
+function login(id) {
+  usuarioLogado = getUsuario(id);
+  usuarioLogado.status = 'Online';
+  adicionarNotificacao(`${usuarioLogado.nickname} entrou no sistema.`);
+  document.getElementById('topbar-avatar').textContent = iniciais(usuarioLogado.nickname);
+  document.getElementById('topbar-nick').textContent = usuarioLogado.nickname;
+  document.getElementById('user-badge').style.display = 'flex';
+  ir('screen-menu');
+}
+
+function logout() {
+  usuarioLogado.status = 'Offline';
+  usuarioLogado = null;
+  document.getElementById('user-badge').style.display = 'none';
+  renderLogin();
+  ir('screen-login');
+}
+
+function renderSalas() {
+  const el = document.getElementById('lista-salas');
+  const ativas = salas.filter(s=>s.status==='Ativa');
+  if(!ativas.length) {
+    el.innerHTML = `<div class="empty"><i class="ti ti-door"></i>Nenhuma sala disponível</div>`;
+    return;
+  }
+  el.innerHTML = ativas.map(s=>{
+    const criador = getUsuario(s.criador);
+    const cont = getConteudo(s.conteudo);
+    return `<div class="sala-card">
+      <div class="sala-info">
+        <div class="sala-nome">${s.nome}</div>
+        <div class="sala-meta">Criador: ${criador?criador.nickname:'?'} · ${s.participantes.length} participante(s)${cont?' · '+cont.titulo:''}</div>
+      </div>
+      <button class="btn btn-primary" onclick="entrarSala(${s.id})"><i class="ti ti-door-enter"></i> Entrar</button>
+    </div>`;
+  }).join('');
+}
+
+function entrarSala(id) {
+  const s = salas.find(x=>x.id===id);
+  if(!s) return;
+  if(!s.participantes.includes(usuarioLogado.id)) {
+    s.participantes.push(usuarioLogado.id);
+  }
+  adicionarNotificacao(`${usuarioLogado.nickname} entrou na sala '${s.nome}'.`);
+  const cont = getConteudo(s.conteudo);
+  const criador = getUsuario(s.criador);
+  const parts = s.participantes.map(pid=>{ const u=getUsuario(pid); return u?`<div class="part-badge"><i class="ti ti-user" style="font-size:12px"></i>${u.nickname}</div>`:''; }).join('');
+  document.getElementById('sala-view-info').innerHTML = `
+    <div class="sv-title">${s.nome}</div>
+    <div class="sv-meta">Criador: ${criador?criador.nickname:'?'} · <span class="badge badge-green">Ativa</span></div>
+    ${cont?`<div class="sv-watching"><i class="ti ti-player-play" style="color:#D85A30;margin-right:6px"></i>Assistindo: <strong>${cont.titulo}</strong> — ${cont.plataforma}</div>`:''}
+    <div class="participantes">${parts}</div>`;
+    renderChat();
+    document.getElementById("filme-atual").textContent =
+    cont ? cont.titulo : "Nenhum conteúdo selecionado";
+  ir('screen-sala-view');
+}
+
+function renderCriarSala() {
+  conteudoSelecionado = null;
+  document.getElementById('nova-sala-nome').value = '';
+  const el = document.getElementById('criar-sala-catalogo');
+  el.innerHTML = conteudos.map(c=>`
+    <div class="conteudo-card" id="cc-${c.id}" onclick="selecionarConteudo(${c.id})">
+      <i class="ti ti-movie" style="font-size:20px;color:#D85A30;flex-shrink:0"></i>
+      <div><div class="titulo">${c.titulo}</div><div class="plat">${c.plataforma} · ${c.genero}</div></div>
+    </div>`).join('');
+}
+
+function enviarMensagem(){
+
+    let texto = document.getElementById("mensagem").value.trim();
+
+    if(texto === "")
+        return;
+
+    mensagens.push({
+        autor: usuarioLogado.nickname,
+        texto: texto
+    });
+
+    document.getElementById("mensagem").value = "";
+
+    renderChat();
+}
+
+function renderChat(){
+
+    let box = document.getElementById("chat-box");
+
+    box.innerHTML = "";
+
+    mensagens.forEach(msg => {
+
+        box.innerHTML += `
+        <div class="chat-msg">
+            <div class="chat-autor">
+                ${msg.autor}
+            </div>
+
+            <div>
+                ${msg.texto}
+            </div>
+        </div>
+        `;
+    });
+
+    box.scrollTop = box.scrollHeight;
+}
+
+function selecionarConteudo(id) {
+  conteudoSelecionado = id;
+  document.querySelectorAll('.conteudo-card').forEach(el=>el.classList.remove('selected'));
+  document.getElementById('cc-'+id).classList.add('selected');
+}
+
+function criarSala() {
+  const nome = document.getElementById('nova-sala-nome').value.trim();
+  if(!nome) { alert('Digite um nome para a sala!'); return; }
+  const nova = {id:nextSalaId++, nome, criador:usuarioLogado.id, participantes:[usuarioLogado.id], status:'Ativa', conteudo:conteudoSelecionado};
+  salas.push(nova);
+  adicionarNotificacao(`${usuarioLogado.nickname} criou a sala '${nome}'.`);
+  entrarSala(nova.id);
+}
+
+function encerrarSala() {
+  const minha = salas.find(s=>s.criador===usuarioLogado.id && s.status==='Ativa');
+  if(!minha) { alert('Você não tem nenhuma sala ativa para encerrar.'); return; }
+  minha.status = 'Encerrada';
+  adicionarNotificacao(`Sala '${minha.nome}' foi encerrada por ${usuarioLogado.nickname}.`);
+  alert(`Sala '${minha.nome}' encerrada!`);
+}
+
+function renderCatalogo() {
+  document.getElementById('lista-catalogo').innerHTML = conteudos.map(c=>`
+    <div class="conteudo-card" style="cursor:default;">
+      <i class="ti ti-movie" style="font-size:20px;color:#D85A30;flex-shrink:0"></i>
+      <div><div class="titulo">${c.titulo}</div><div class="plat">${c.plataforma} · ${c.genero}</div></div>
+    </div>`).join('');
+}
+
+function renderNotificacoes() {
+  const el = document.getElementById('lista-notificacoes');
+  if(!notificacoes.length) {
+    el.innerHTML = `<div class="empty"><i class="ti ti-bell"></i>Nenhuma notificação ainda</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="notif-list">${notificacoes.map(n=>`
+    <div class="notif-item"><i class="ti ti-bell"></i><span>${n}</span></div>`).join('')}</div>`;
+}
+
+function removerConta() {
+  if(!confirm(`Remover a conta de ${usuarioLogado.nickname}?`)) return;
+  salas.forEach(s=>{ if(s.criador===usuarioLogado.id) s.status='Encerrada'; s.participantes=s.participantes.filter(p=>p!==usuarioLogado.id); });
+  adicionarNotificacao(`Conta de '${usuarioLogado.nickname}' foi removida.`);
+  usuarios = usuarios.filter(u=>u.id!==usuarioLogado.id);
+  usuarioLogado = null;
+  document.getElementById('user-badge').style.display = 'none';
+  renderLogin();
+  ir('screen-login');
+}
+
+renderLogin();
+</script>
+</body>
+</html>
